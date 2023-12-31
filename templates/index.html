@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin: 20px;
+        }
+        
+        #expenses-container {
+            flex: 1;
+            max-width: 400px;
+            margin-right: 20px;
+            margin-left: 50px;
+            border-right: 8px solid #333; 
+            padding-right: 200px;
+        }
+
+        #chart-container {
+            flex: 1;
+            max-width: 600px;
+            margin-top: 100px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        form {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input {
+            padding: 8px;
+            margin-bottom: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            border-radius: 4px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background-color: #fff;
+            margin :auto;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            
+        }
+
+        a {
+            color: #e74c3c;
+            text-decoration: none;
+            float: right;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        #expenses-container ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #expenses-container li {
+            background-color: #fff;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #expenses-container a {
+            color: #e74c3c;
+            text-decoration: none;
+            float: right;
+        }
+
+        #expenses-container a:hover {
+            text-decoration: underline;
+        }
+
+
+
+
+    </style>
+</head>
+<body>
+    <div id="expenses-container">
+    <h1>Expense Tracker</h1>
+    <form action="/add" method="post">
+        <label for="description">Description:</label>
+        <input type="text" name="description" required>
+        <label for="amount">Amount:</label>
+        <input type="number" name="amount" required>
+        <button type="submit">Add Expense</button>
+    </form>
+    <ul>
+        {% for expense in expenses %}
+            <li>
+                {{ expense[1] }} - ₹{{ expense[2] }}
+                <a href="/delete/{{ expense[0] }}">Delete</a>
+            </li>
+        {% endfor %}
+    </ul>
+    </div>
+    <div id="chart-container">
+    <div style="width: 50%; margin: auto;">
+        <canvas id="pieChart" width="400" height="400"></canvas>
+    </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch("/expenses_json")
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('pieChart').getContext('2d');
+    
+                    // Function to generate a color based on a string
+                    function stringToColor(str) {
+                        let hash = 0;
+                        for (let i = 0; i < str.length; i++) {
+                            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                        }
+                        const color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+                        return "#" + "00000".substring(0, 6 - color.length) + color;
+                    }
+    
+                    // Extracting category names and amounts
+                    const categories = [...new Set(data.map(expense => expense.description))];
+                    const expensesData = categories.map(category => {
+                        const categoryExpenses = data.filter(expense => expense.description === category);
+                        return categoryExpenses.reduce((total, expense) => total + expense.amount, 0);
+                    });
+    
+                    // Generating colors for each category
+                    const backgroundColors = categories.map(category => stringToColor(category));
+    
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: categories,
+                            datasets: [{
+                                data: expensesData,
+                                backgroundColor: backgroundColors
+                            }]
+                        }
+                    });
+                });
+        });
+    </script>
+    
+</body>
+</html>
